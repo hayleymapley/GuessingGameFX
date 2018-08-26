@@ -31,19 +31,6 @@ import javafx.scene.text.Text;
  * guesses amount is fewer than the current high score (set by default at max. (10) on launch)
  * then the high score is set to that.
  * 
- * Some issues: Runtime errors (excluding negatives, decimals, text, and empty field)
- * Solved: Made the textField allow only numerical input using a listener
- *		 : Disallowed empty field input by disabling the button using a disable property bind
- *
- * Issue: new game button highlighted after every text input meaning that the user has to click on textfield
- * Solved: set new game button's 'focus traversable' property to false
- *
- * Issue: Users can continue guessing after game has ended
- * Solved: Set textfield to be invisible once game has ended until New Round button is pressed
- *
- * Issue: Program has runtime error when user enters many digits
- * Solved: add regex quantifier to textField change listener
- *
  * @author mapleyhayl
  *
  */
@@ -53,6 +40,7 @@ public class GuessingGameFX extends Application {
 	private int score = 10; //default high score
 	private int guesses = 0; //current number of guesses made
 	private int target = 0; //number the user is trying to guess
+	private int range = 100;
 
 	private static final int DEFAULT_WIDTH = 600;
 	private static final int DEFAULT_HEIGHT = 500;
@@ -65,8 +53,8 @@ public class GuessingGameFX extends Application {
 
 	private GridPane pane = new GridPane();
 	
-	private final Text welcome = new Text();
-	private final Text range = new Text();
+	private final Text welcomeText = new Text();
+	private final Text rangeText = new Text();
 	private final Text guessText = new Text();
 	private Text scoreDisplay = new Text();
 	
@@ -76,15 +64,19 @@ public class GuessingGameFX extends Application {
 	private Button quit = new Button();
 	private Button guess = new Button();
 
+	/**
+	 * Standard start method for JavaFX
+	 */
 	@Override
 	public void start(Stage primaryStage) {
 
 		//randomly generates target number
-		target = (int)Math.ceil(Math.random()*100);
+		target = (int)Math.ceil(Math.random()*range);
 
 		//		For testing - to see the target: 
 		System.out.println("Target: " + target);
 
+		//displays menu
 		initialisePane();
 		
 		//		restricts input to textField so it only allows integers
@@ -107,7 +99,7 @@ public class GuessingGameFX extends Application {
 				target = (int) Math.ceil(Math.random()*100);
 				guesses = 0;
 				guessedNums.clear();
-				range.setText("\nCan you guess the secret number? (1-100)");
+				rangeText.setText("\nCan you guess the secret number? (1-" + range +")");
 				guessText.setText("Target has been reset - enter your guess!"); //change color back to black
 			}
 		});
@@ -138,41 +130,45 @@ public class GuessingGameFX extends Application {
 		primaryStage.show();
 	}
 
+	/**
+	 * Sets attributes of all visual and interactive elements
+	 * and the main pane.
+	 */
 	public void initialisePane() {
 		// Set text attributes
-		welcome.setText("Welcome to the Guessing Game!\n");
-		welcome.setFont(Font.font(30));
-		GridPane.setConstraints(welcome, 1, 0);
+		welcomeText.setText("Welcome to the Guessing Game!\n");
+		welcomeText.setFont(Font.font(30));
+		GridPane.setConstraints(welcomeText, 1, 0);
 
-		range.setText("\nCan you guess the secret number in 10 guesses? (1-100)");
-		range.setFill(Color.WHITE);
-		GridPane.setConstraints(range, 1, 1);
+		rangeText.setText("\nCan you guess the secret number in 10 guesses? (1-100)");
+		rangeText.setFill(Color.WHITE);
+		GridPane.setConstraints(rangeText, 1, 4);
 		
 		guessText.setText("Enter your guess:");
 		guessText.setFill(Color.WHITE);
-		GridPane.setConstraints(guessText, 1, 2);
+		GridPane.setConstraints(guessText, 1, 5);
 		
 		scoreDisplay.setFill(Color.WHITE);
 		scoreDisplay.setText("Fewest Guesses: " + score);
-		GridPane.setConstraints(scoreDisplay, 2, 5);
+		GridPane.setConstraints(scoreDisplay, 2, 8);
 		
 		// Set TextField attributes
-		GridPane.setConstraints(textField, 1, 3);
+		GridPane.setConstraints(textField, 1, 6);
 		
 		// Set button attributes
 		newRound.setText("New round");
-		GridPane.setConstraints(newRound, 2, 3);
+		GridPane.setConstraints(newRound, 2, 6);
 		newRound.setFocusTraversable(false); //stops new game button being highlighted after every num input
 		newRound.setPrefSize(80, 25);
 		
 		quit.setText("Quit");
-		GridPane.setConstraints(quit, 2, 4);
+		GridPane.setConstraints(quit, 2, 7);
 		quit.setFocusTraversable(false);
 		quit.setPrefSize(80, 25);
 		
 		guess.setText("Guess");
 		guess.setDefaultButton(true); //sets guess button as default button
-		GridPane.setConstraints(guess, 1, 4);
+		GridPane.setConstraints(guess, 1, 7);
 //		inspiration: https://stackoverflow.com/questions/20264480/javafx-bind-to-multiple-properties
 		BooleanBinding booleanBinding = textField.textProperty().isEqualTo("");
 		guess.disableProperty().bind(booleanBinding);
@@ -185,21 +181,19 @@ public class GuessingGameFX extends Application {
 		pane.setFocusTraversable(true);
 
 		// Add all elements to pane
-		pane.getChildren().add(welcome);
-		pane.getChildren().add(range);
-		pane.getChildren().add(textField);
-		pane.getChildren().add(guessText);
-		pane.getChildren().add(guess);
-		pane.getChildren().add(newRound);
-		pane.getChildren().add(quit);
-		pane.getChildren().add(scoreDisplay);
+		pane.getChildren().addAll(welcomeText, rangeText, textField, guessText, guess, newRound, quit, scoreDisplay);
 		pane.setAlignment(Pos.CENTER);
 	}
 
+	/**
+	 * Takes the textField entry as an integer and checks it
+	 * @param guess
+	 */
 	public void guessCheck(int guess) {
-		if (guess < 1 || guess > 100) { // if guess is invalid
+		System.out.println(target);
+		if (guess < 1 || guess > range) { // if guess is invalid
 			guessText.setFill(Color.RED);
-			guessText.setText("Please provide a valid guess: (Between 1-100)");
+			guessText.setText("Please provide a valid guess: (Between 1-" + range +")");
 		} else if (guess == target) { // if guess is correct
 			guessedNums.add(guess);
 			guessText.setFill(Color.WHITE);
@@ -223,7 +217,7 @@ public class GuessingGameFX extends Application {
 			textField.setVisible(false);
 		}
 		if (!guessedNums.isEmpty()) {
-			range.setText("\n" + guessedNums.toString());
+			rangeText.setText("\n" + guessedNums.toString());
 		}
 	}
 	
